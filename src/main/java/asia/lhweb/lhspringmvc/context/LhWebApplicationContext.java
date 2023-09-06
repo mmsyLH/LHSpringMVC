@@ -88,6 +88,7 @@ public class LhWebApplicationContext {
                      *
                      * aClazz.getSimpleName().substring(1) 表示从第二个开始到后面全部
                      */
+                    //BeanName ：studentController
                     String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase()
                             + aClazz.getSimpleName().substring(1);
                     ioc.put(beanName, instance);
