@@ -1,6 +1,7 @@
 package asia.lhweb.controller;
 
 import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
+import asia.lhweb.lhspringmvc.servlet.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,6 +15,7 @@ import java.io.IOException;
  */
 @Controller
 public class StudentController {
+    @RequestMapping(value = "/student/list")
     public void listStudent(HttpServletRequest request, HttpServletResponse response) {
             response.setContentType("text/html;charset=UTF-8");
         try {
