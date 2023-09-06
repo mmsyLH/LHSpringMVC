@@ -56,7 +56,12 @@ public class LhWebApplicationContext {
     //编写方法，完成自己的spring容器的初始化
     public void init(){
         String basePackage = XMLParser.getBasePackage("lhspringMVC.xml");
-        scanPackage(basePackage);
+        String[] basePackages = basePackage.split(",");
+        if (basePackages.length>0){//传入的包要>0
+            for (String aPackage : basePackages) {
+                scanPackage(aPackage);
+            }
+        }
         System.out.println("classFullPathList:"+classFullPathList);
     }
 
