@@ -5,6 +5,7 @@ import asia.lhweb.lhspringmvc.handler.LhHandler;
 import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
 import asia.lhweb.lhspringmvc.servlet.annotation.RequestMapping;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,9 +37,19 @@ public class LhDispatcherServlet extends HttpServlet {
      * @throws ServletException servlet异常
      */
     @Override
-    public void init() throws ServletException {
-        System.out.println("init方法启动");
-        lhWebApplicationContext = new LhWebApplicationContext();
+    public void init(ServletConfig servletConfig) throws ServletException {
+        // System.out.println("init方法启动");
+
+        // 读取配置
+        /*
+            <init-param>
+             <param-name>contextConfigLocation</param-name>
+             <param-value>classpath:lhspringMVC.xml</param-value>
+           </init-param>
+         */
+        String configLocation =
+                servletConfig.getInitParameter("contextConfigLocation");//得到的是 classpath:lhspringMVC.xml
+        lhWebApplicationContext = new LhWebApplicationContext(configLocation);
         lhWebApplicationContext.init();
         // 调用方法 完成url和控制器方法的映射
         initHandlerMapping();
@@ -80,8 +91,10 @@ public class LhDispatcherServlet extends HttpServlet {
                     if (declaredMethod.isAnnotationPresent(RequestMapping.class)) {
                         // 取出RequestMapping注解里的值-》就是映射路径
                         RequestMapping requestMapping = declaredMethod.getAnnotation(RequestMapping.class);
-                        //得到工程路径进行拼接
-                        String url = getServletContext().getContextPath()+requestMapping.value();// value就是url
+                        // 得到工程路径进行拼接
+                        // String contextPath = getServletContext().getContextPath();
+                        String url = requestMapping.value();
+                        // String url = getServletContext().getContextPath() + requestMapping.value();// value就是url
 
                         // 创建一个LhHandler对象  这就是一个映射关系
                         LhHandler lhHandler = new LhHandler(url, entry.getValue(), declaredMethod);
