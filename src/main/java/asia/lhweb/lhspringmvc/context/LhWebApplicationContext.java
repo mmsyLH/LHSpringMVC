@@ -19,13 +19,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LhWebApplicationContext {
     // 定义属性 保存要扫描的包的全路径
     private List<String> classFullPathList = new ArrayList<String>();
-
     // 定义属性ioc 存放反射后生成的bean对象  比如controller service  目前放入的都是单例的 多例一般是动态生成
     public ConcurrentHashMap<String, Object> ioc = new ConcurrentHashMap<String, Object>();
+    private String coonfigLocation;    // 表示psring 容器配置文件
+
+
+
+
+    public LhWebApplicationContext() {
+    }
+
+    public LhWebApplicationContext(String contextConfigLocation) {
+        this.coonfigLocation = contextConfigLocation;
+    }
 
     // 编写方法，完成自己的spring容器的初始化
     public void init() {
-        String basePackage = XMLParser.getBasePackage("lhspringMVC.xml");
+        String basePackage = XMLParser.getBasePackage(coonfigLocation.split(":")[1]);//springMVC.xml
         String[] basePackages = basePackage.split(",");
         if (basePackages.length > 0) {// 传入的包要>0
             for (String aPackage : basePackages) {
@@ -37,7 +47,6 @@ public class LhWebApplicationContext {
         executeInstance();
         System.out.println("扫描后的Ioc：" + ioc);
     }
-
     /**
      * 扫描包
      * 创建方法完成对包的扫描 io/容器 java基础
@@ -88,9 +97,8 @@ public class LhWebApplicationContext {
                      *
                      * aClazz.getSimpleName().substring(1) 表示从第二个开始到后面全部
                      */
-                    //BeanName ：studentController
-                    String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase()
-                            + aClazz.getSimpleName().substring(1);
+                    // BeanName ：studentController
+                    String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
                     ioc.put(beanName, instance);
                 }// 如果有其他的注解可以扩展
             }
