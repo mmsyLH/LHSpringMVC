@@ -1,6 +1,7 @@
 package asia.lhweb.lhspringmvc.context;
 
 import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
+import asia.lhweb.lhspringmvc.servlet.annotation.Service;
 import asia.lhweb.lhspringmvc.xml.XMLParser;
 
 import java.io.File;
@@ -24,8 +25,6 @@ public class LhWebApplicationContext {
     private String coonfigLocation;    // 表示psring 容器配置文件
 
 
-
-
     public LhWebApplicationContext() {
     }
 
@@ -35,7 +34,7 @@ public class LhWebApplicationContext {
 
     // 编写方法，完成自己的spring容器的初始化
     public void init() {
-        String basePackage = XMLParser.getBasePackage(coonfigLocation.split(":")[1]);//springMVC.xml
+        String basePackage = XMLParser.getBasePackage(coonfigLocation.split(":")[1]);// springMVC.xml
         String[] basePackages = basePackage.split(",");
         if (basePackages.length > 0) {// 传入的包要>0
             for (String aPackage : basePackages) {
@@ -47,6 +46,7 @@ public class LhWebApplicationContext {
         executeInstance();
         System.out.println("扫描后的Ioc：" + ioc);
     }
+
     /**
      * 扫描包
      * 创建方法完成对包的扫描 io/容器 java基础
@@ -101,6 +101,29 @@ public class LhWebApplicationContext {
                     String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
                     ioc.put(beanName, instance);
                 }// 如果有其他的注解可以扩展
+                else if (aClazz.isAnnotationPresent(Service.class)) {// 处理Service注解
+                    Service serviceAnnotation = aClazz.getAnnotation(Service.class);
+                    String beanName = serviceAnnotation.value();
+
+
+                    if ("".equals(beanName)) {// 没有指定就使用默认的机制，即类名小写
+                        // beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
+                        // 1 得到所有的接口名称
+                        Class<?>[] interfaces = aClazz.getInterfaces();
+                        Object instance = aClazz.newInstance();// 这里有点压力！！！！！！
+                        // 我的理解：如果在后面New的话就有可能导致出现多个beanName对应不同的对象实例到Ioc容器中
+                        // 2 遍历接口，然后通过多个接口名来注入
+                        for (Class<?> anInterface : interfaces) {
+                            String beanName2 = anInterface.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
+                            ioc.put(beanName2, instance);
+                        }
+                        // 3 留一个作业，使用类名的首字母小写来注入
+                    } else {// 如果有指定名称，就使用这个名称对象
+                        ioc.put(beanName, aClazz.newInstance());
+                    }
+
+
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
