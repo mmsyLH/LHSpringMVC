@@ -136,7 +136,32 @@ public class LhDispatcherServlet extends HttpServlet {
                 response.getWriter().write("<h1>404 not Found</h1>");
 
             } else {// 匹配成功 就反射调用handle里的那个控制器方法
-                lhHandler.getMethod().invoke(lhHandler.getController(), request, response);
+
+                //目标将: HttpServletRequest 和 HttpServletResponse封装到参数数组
+                //1. 得到目标方法的所有形参参数信息[对应的数组]
+                Class<?>[] parameterTypes =
+                        lhHandler.getMethod().getParameterTypes();
+
+                //2. 创建一个参数数组[对应实参数组], 在后面反射调用目标方法时，会使用到
+                Object[] params =
+                        new Object[parameterTypes.length];
+
+                //3遍历parameterTypes形参数组,根据形参数组信息，将实参填充到实参数组
+
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    //取出每一个形参类型
+                    Class<?> parameterType = parameterTypes[i];
+                    //如果这个形参是HttpServletRequest, 将request填充到params
+                    //在原生SpringMVC中,是按照类型来进行匹配，老师这里简化使用名字来进行匹配
+                    if ("HttpServletRequest".equals(parameterType.getSimpleName())) {
+                        params[i] = request;
+                    } else if ("HttpServletResponse".equals(parameterType.getSimpleName())) {
+                        params[i] = response;
+                    }
+                }
+
+
+                lhHandler.getMethod().invoke(lhHandler.getController(),params);
             }
         } catch (Exception e) {
             e.printStackTrace();
