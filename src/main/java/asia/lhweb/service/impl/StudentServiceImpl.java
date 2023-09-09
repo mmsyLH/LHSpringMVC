@@ -60,4 +60,16 @@ public class StudentServiceImpl implements StudentService {
         System.out.println(res);
         return sName.equals("罗汉");
     }
+
+    @Override
+    public List<Student> listStudent() {
+        List<Student> students =
+                new ArrayList<>();
+        students.add(new Student(100, "牛魔王", " 400"));
+        students.add(new Student(200, "老猫妖怪", "200"));
+        students.add(new Student(300, "大象精", "100"));
+        students.add(new Student(400, "黄袍怪", "300"));
+        students.add(new Student(500, "白骨精", "800"));
+        return students;
+    }
 }

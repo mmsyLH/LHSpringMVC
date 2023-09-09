@@ -4,6 +4,7 @@ import asia.lhweb.entity.Student;
 import asia.lhweb.lhspringmvc.annotation.AutoWired;
 import asia.lhweb.lhspringmvc.annotation.Controller;
 import asia.lhweb.lhspringmvc.annotation.RequestMapping;
+import asia.lhweb.lhspringmvc.annotation.ResponseBody;
 import asia.lhweb.service.StudentService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,9 +44,7 @@ public class StudentController {
     // 增加方法，通过name返回对应的monster集合
 
     @RequestMapping(value = "/student/find")
-    public void findMonsterByName(HttpServletRequest request,
-                                  HttpServletResponse response,
-                                  String name) {
+    public void findMonsterByName(HttpServletRequest request, HttpServletResponse response, String name) {
         // 设置编码和返回类型
         response.setContentType("text/html;charset=utf-8");
         System.out.println("--接收到的name---" + name);
@@ -54,9 +53,7 @@ public class StudentController {
         List<Student> students = studentService.findStudentByName(name);
         content.append("<table border='1px' width='400px' style='border-collapse:collapse'>");
         for (Student student : students) {
-            content.append("<tr><td>" + student.getId()
-                    + "</td><td>" + student.getName() + "</td><td>"
-                    + student.getPwd() + "</td></tr>");
+            content.append("<tr><td>" + student.getId() + "</td><td>" + student.getName() + "</td><td>" + student.getPwd() + "</td></tr>");
         }
         content.append("</table>");
 
@@ -76,15 +73,36 @@ public class StudentController {
      * @return {@link String}
      */
     @RequestMapping(value = "/student/login")
-    public String login(HttpServletRequest request,HttpServletResponse response,String sName) {
+    public String login(HttpServletRequest request, HttpServletResponse response, String sName) {
         System.out.println("login_name: " + sName);
         Boolean res = studentService.login(sName);
         // System.out.println("login方法："+res);
-        request.setAttribute("sName",sName);
+        request.setAttribute("sName", sName);
         if (res) {
             return "forward:/login_ok.jsp";
         } else {
             return "forward:/login_error.jsp";
         }
+    }
+
+    /**
+     * 编写方法,返回json格式的数据
+     * 1. 思路梳理
+     * 2. 目标方法返回的结果是给springmvc底层通过反射调用的位置
+     * 3. 我们在springmvc底层反射调用的位置，接收到结果并解析即可
+     * 4. 方法上标注了 @ResponseBody 表示希望以json格式返回给客户端/浏览器
+     * 5. 目标方法的实参，在springmvc底层通过封装好的参数数组，传入..
+     *
+     * @param request
+     * @param response
+     * @return
+     */
+
+    @RequestMapping("/student/list/json")
+    @ResponseBody
+    public List<Student> listStudentByJson(HttpServletRequest request, HttpServletResponse response) {
+
+        List<Student> students = studentService.listStudent();
+        return students;
     }
 }

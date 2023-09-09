@@ -9,9 +9,11 @@ import java.util.List;
  * @date : 2023/9/6
  */
 public interface StudentService {
-      List<Student> listMonster();
+    List<Student> listMonster();
 
-      List<Student> findStudentByName(String name);
+    List<Student> findStudentByName(String name);
 
     Boolean login(String sName);
+
+    List<Student> listStudent();
 }
