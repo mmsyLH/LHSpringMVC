@@ -12,4 +12,6 @@ public interface StudentService {
       List<Student> listMonster();
 
       List<Student> findStudentByName(String name);
+
+    Boolean login(String sName);
 }
