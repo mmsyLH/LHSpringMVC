@@ -171,13 +171,23 @@ public class LhDispatcherServlet extends HttpServlet {
                 for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
                     String name = entry.getKey();// 指的是请求中的参数名
                     String value = entry.getValue()[0];// 这里只是实现简单的一个参数名对应一个参数
-                    //获得参数是在方法总的第几个位置
+                    // 获得参数是在方法总的第几个位置
                     int indexReqParameter = getIndexReqParameter(lhHandler.getMethod(), name);
-                    if(indexReqParameter!=-1){//说明找到了对应的位置
-                        params[indexReqParameter]=value;
+                    if (indexReqParameter != -1) {// 说明找到了对应的位置
+                        params[indexReqParameter] = value;
 
-                    }else {//没有找到@RequestParameter注解对应的参数,就会使用默认的机制进行匹配
-                        //一会再写
+                    } else {// 没有找到@RequestParameter注解对应的参数,就会使用默认的机制进行匹配
+                        // 1 先拿到目标方法所有形参名称 不是形参的类型！！！！！！！！！！ 如name request job这样的
+
+                        // 2 对得到的目标方法的所有形参名进行遍历，如果匹配就把当前请求的参数值填充到我们的实参数组中
+                        List<String> nameReqParameters = getNameReqParameter(lhHandler.getMethod());
+                        for (int i = 0; i < nameReqParameters.size(); i++) {
+                            // 如果Url中的实参名和形参名一样
+                            if (nameReqParameters.get(i).equals(name)) {// 匹配成功
+                                params[i] =value;//填充到实参数组
+                                break;
+                            }
+                        }
 
                     }
                 }
@@ -207,16 +217,41 @@ public class LhDispatcherServlet extends HttpServlet {
             // 判断是否存在这个注解
             boolean annotationPresent = parameter.isAnnotationPresent(RequestParam.class);
             if (annotationPresent) {// 存在这个注解
-                //取出当前这个参数的 @RequestParam(value = "xxx")
+                // 取出当前这个参数的 @RequestParam(value = "xxx")
                 RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
                 String value = requestParamAnnotation.value();
-                //这里就是匹配的比较
+                // 这里就是匹配的比较
                 if (name.equals(value)) {
-                    return i;//找到请求的参数，对应的目标方法的形参的位置
+                    return i;// 找到请求的参数，对应的目标方法的形参的位置
                 }
             }
         }
-        //如果没有匹配成功，就返回-1
+        // 如果没有匹配成功，就返回-1
         return -1;
+    }
+
+    /**
+     * 获取目标方法中的形参名称数组
+     *
+     * @param method 目标方法
+     * @return {@link List}<{@link String}>返回全部的形参名称
+     */
+    private List<String> getNameReqParameter(Method method) {
+        ArrayList<String> parameterList = new ArrayList<>();
+
+        // 获取到所有的参数名  有一个小细节
+        /**
+         * 在默认的情况下
+         * parameter.getName()得到的名字不是形参真正的名字！！！！！！！！！！
+         * 而是[arg0,arg1,arg2,arg3...]
+         *  这里我们要引入一个插件，使用java8特性，这样才能解决
+         */
+        Parameter[] parameters = method.getParameters();
+        for (Parameter parameter : parameters) {
+            String name = parameter.getName();
+            parameterList.add(name);
+        }
+        System.out.println("目标方法的形参列表=" + parameterList);
+        return parameterList;
     }
 }
