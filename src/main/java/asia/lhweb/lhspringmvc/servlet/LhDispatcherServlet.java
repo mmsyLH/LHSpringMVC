@@ -193,7 +193,23 @@ public class LhDispatcherServlet extends HttpServlet {
                 }
 
                 // 方法反射
-                lhHandler.getMethod().invoke(lhHandler.getController(), params);
+                Object res = lhHandler.getMethod().invoke(lhHandler.getController(), params);
+                if(res instanceof String){
+                    String viewName = (String)res;
+                    if (viewName.contains(":")){//说明你返回的String 结果可能是forword:/login_ok.jsp 或 redirect:/xxx/xx/xx.xx
+                        String viewType = viewName.split(":")[0];
+                        String viewPage = viewName.split(":")[1];
+                        //判断是forward 还是 redirect
+                        if ("forward".equals(viewType)){//说明希望是请求转发
+                            request.getRequestDispatcher(viewPage).forward(request, response);
+                        }else if ("redirect".equals(viewType)){
+                            response.sendRedirect(viewPage);
+                        }
+                    }
+
+                }//
+                //对返回结果进行解析
+
             }
         } catch (Exception e) {
             e.printStackTrace();

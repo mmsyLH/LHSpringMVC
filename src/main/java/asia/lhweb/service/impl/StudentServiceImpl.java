@@ -18,6 +18,7 @@ public class StudentServiceImpl implements StudentService {
         //这里就模拟数据->DB
         List<Student> monsters =
                 new ArrayList<>();
+        monsters.add(new Student(0, "罗汉大王", "123"));
         monsters.add(new Student(100, "牛魔王", "123"));
         monsters.add(new Student(200, "老猫妖怪", "123456"));
         return monsters;
@@ -45,5 +46,18 @@ public class StudentServiceImpl implements StudentService {
             }
         }
         return findStudents;
+    }
+
+    /**
+     * 登录
+     *
+     * @param sName 姓名
+     * @return {@link Boolean}
+     */
+    @Override
+    public Boolean login(String sName) {
+        boolean res = sName.equals("罗汉");
+        System.out.println(res);
+        return sName.equals("罗汉");
     }
 }
