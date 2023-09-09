@@ -1,10 +1,12 @@
 package asia.lhweb.lhspringmvc.servlet;
 
 import asia.lhweb.lhspringmvc.annotation.RequestParam;
+import asia.lhweb.lhspringmvc.annotation.ResponseBody;
 import asia.lhweb.lhspringmvc.context.LhWebApplicationContext;
 import asia.lhweb.lhspringmvc.handler.LhHandler;
 import asia.lhweb.lhspringmvc.annotation.Controller;
 import asia.lhweb.lhspringmvc.annotation.RequestMapping;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -12,9 +14,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -184,7 +188,7 @@ public class LhDispatcherServlet extends HttpServlet {
                         for (int i = 0; i < nameReqParameters.size(); i++) {
                             // 如果Url中的实参名和形参名一样
                             if (nameReqParameters.get(i).equals(name)) {// 匹配成功
-                                params[i] =value;//填充到实参数组
+                                params[i] = value;// 填充到实参数组
                                 break;
                             }
                         }
@@ -194,21 +198,40 @@ public class LhDispatcherServlet extends HttpServlet {
 
                 // 方法反射
                 Object res = lhHandler.getMethod().invoke(lhHandler.getController(), params);
-                if(res instanceof String){
-                    String viewName = (String)res;
-                    if (viewName.contains(":")){//说明你返回的String 结果可能是forword:/login_ok.jsp 或 redirect:/xxx/xx/xx.xx
+                if (res instanceof String) {
+                    String viewName = (String) res;
+                    if (viewName.contains(":")) {// 说明你返回的String 结果可能是forword:/login_ok.jsp 或 redirect:/xxx/xx/xx.xx
                         String viewType = viewName.split(":")[0];
                         String viewPage = viewName.split(":")[1];
-                        //判断是forward 还是 redirect
-                        if ("forward".equals(viewType)){//说明希望是请求转发
+                        // 判断是forward 还是 redirect
+                        if ("forward".equals(viewType)) {// 说明希望是请求转发
                             request.getRequestDispatcher(viewPage).forward(request, response);
-                        }else if ("redirect".equals(viewType)){
+                        } else if ("redirect".equals(viewType)) {
                             response.sendRedirect(viewPage);
                         }
                     }
 
-                }//
-                //对返回结果进行解析
+                } else if (res instanceof ArrayList) {//如果是一个集合
+
+                    //判断目标方法是否有@ResponseBody
+                    Method method = lhHandler.getMethod();
+                    //判断是否有这个注解
+                    if (method.isAnnotationPresent(ResponseBody.class)){
+                        //把res[ArrayList]转成json格式->返回
+                        //使用jackon
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        String resJson = objectMapper.writeValueAsString(res);
+
+                        response.setContentType("text/html; charset=utf-8");
+                        PrintWriter writer = response.getWriter();
+                        writer.write(resJson);
+                        writer.flush();
+                        writer.close();
+
+                    }
+
+                }
+
 
             }
         } catch (Exception e) {
