@@ -1,4 +1,4 @@
-package asia.lhweb.lhspringmvc.servlet.annotation;
+package asia.lhweb.lhspringmvc.annotation;
 
 import java.lang.annotation.*;
 
