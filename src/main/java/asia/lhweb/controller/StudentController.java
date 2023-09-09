@@ -4,11 +4,13 @@ import asia.lhweb.entity.Student;
 import asia.lhweb.lhspringmvc.annotation.AutoWired;
 import asia.lhweb.lhspringmvc.annotation.Controller;
 import asia.lhweb.lhspringmvc.annotation.RequestMapping;
+import asia.lhweb.lhspringmvc.annotation.RequestParam;
 import asia.lhweb.service.StudentService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 /**
@@ -35,6 +37,34 @@ public class StudentController {
         sb.append("</table>");
         try {
             response.getWriter().write(sb.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    //增加方法，通过name返回对应的monster集合
+
+    @RequestMapping(value = "/student/find")
+    public void findMonsterByName(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  @RequestParam(value = "name") String name) {
+        //设置编码和返回类型
+        response.setContentType("text/html;charset=utf-8");
+        System.out.println("--接收到的name---" + name);
+        StringBuilder content = new StringBuilder("<h1>学生列表信息</h1>");
+        //调用monsterService
+        List<Student> students = studentService.findStudentByName(name);
+        content.append("<table border='1px' width='400px' style='border-collapse:collapse'>");
+        for (Student student : students) {
+            content.append("<tr><td>" + student.getId()
+                    + "</td><td>" + student.getName() + "</td><td>"
+                    + student.getPwd()  + "</td></tr>");
+        }
+        content.append("</table>");
+
+        //获取writer返回信息
+        try {
+            PrintWriter printWriter = response.getWriter();
+            printWriter.write(content.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }

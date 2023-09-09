@@ -1,5 +1,6 @@
 package asia.lhweb.lhspringmvc.servlet;
 
+import asia.lhweb.lhspringmvc.annotation.RequestParam;
 import asia.lhweb.lhspringmvc.context.LhWebApplicationContext;
 import asia.lhweb.lhspringmvc.handler.LhHandler;
 import asia.lhweb.lhspringmvc.annotation.Controller;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +49,7 @@ public class LhDispatcherServlet extends HttpServlet {
            </init-param>
          */
         String configLocation =
-                servletConfig.getInitParameter("contextConfigLocation");//得到的是 classpath:lhspringMVC.xml
+                servletConfig.getInitParameter("contextConfigLocation");// 得到的是 classpath:lhspringMVC.xml
         lhWebApplicationContext = new LhWebApplicationContext(configLocation);
         lhWebApplicationContext.init();
         // 调用方法 完成url和控制器方法的映射
@@ -137,22 +139,22 @@ public class LhDispatcherServlet extends HttpServlet {
 
             } else {// 匹配成功 就反射调用handle里的那个控制器方法
 
-                //目标将: HttpServletRequest 和 HttpServletResponse封装到参数数组
-                //1. 得到目标方法的所有形参参数信息[对应的数组]
+                // 目标将: HttpServletRequest 和 HttpServletResponse封装到参数数组
+                // 1. 得到目标方法的所有形参参数信息[对应的数组]
                 Class<?>[] parameterTypes =
                         lhHandler.getMethod().getParameterTypes();
 
-                //2. 创建一个参数数组[对应实参数组], 在后面反射调用目标方法时，会使用到
+                // 2. 创建一个参数数组[对应实参数组], 在后面反射调用目标方法时，会使用到
                 Object[] params =
                         new Object[parameterTypes.length];
 
-                //3遍历parameterTypes形参数组,根据形参数组信息，将实参填充到实参数组
+                // 3遍历parameterTypes形参数组,根据形参数组信息，将实参填充到实参数组
 
                 for (int i = 0; i < parameterTypes.length; i++) {
-                    //取出每一个形参类型
+                    // 取出每一个形参类型
                     Class<?> parameterType = parameterTypes[i];
-                    //如果这个形参是HttpServletRequest, 将request填充到params
-                    //在原生SpringMVC中,是按照类型来进行匹配，老师这里简化使用名字来进行匹配
+                    // 如果这个形参是HttpServletRequest, 将request填充到params
+                    // 在原生SpringMVC中,是按照类型来进行匹配，这里简化使用名字来进行匹配
                     if ("HttpServletRequest".equals(parameterType.getSimpleName())) {
                         params[i] = request;
                     } else if ("HttpServletResponse".equals(parameterType.getSimpleName())) {
@@ -160,11 +162,61 @@ public class LhDispatcherServlet extends HttpServlet {
                     }
                 }
 
+                // 将http请求参数封装到params数组中, 提示，要注意填充实参的时候，顺序问题
 
-                lhHandler.getMethod().invoke(lhHandler.getController(),params);
+                // 1. 获取http请求的参数集合
+                // 处理提交的数据中文乱码
+                request.setCharacterEncoding("utf-8");
+                Map<String, String[]> parameterMap = request.getParameterMap();
+                for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+                    String name = entry.getKey();// 指的是请求中的参数名
+                    String value = entry.getValue()[0];// 这里只是实现简单的一个参数名对应一个参数
+                    //获得参数是在方法总的第几个位置
+                    int indexReqParameter = getIndexReqParameter(lhHandler.getMethod(), name);
+                    if(indexReqParameter!=-1){//说明找到了对应的位置
+                        params[indexReqParameter]=value;
+
+                    }else {//没有找到@RequestParameter注解对应的参数,就会使用默认的机制进行匹配
+                        //一会再写
+
+                    }
+                }
+
+                // 方法反射
+                lhHandler.getMethod().invoke(lhHandler.getController(), params);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    /**
+     * 获取请求参数在目标方法中的索引
+     *
+     * @param method 目标方法
+     * @param name   请求的名称  指的是url中 参数的name
+     * @return int
+     */
+    private int getIndexReqParameter(Method method, String name) {
+        // 1 得到目标方法中的全部请求参数
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            // 取出当前的形参参数
+            Parameter parameter = parameters[i];
+            // 判断是否存在这个注解
+            boolean annotationPresent = parameter.isAnnotationPresent(RequestParam.class);
+            if (annotationPresent) {// 存在这个注解
+                //取出当前这个参数的 @RequestParam(value = "xxx")
+                RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
+                String value = requestParamAnnotation.value();
+                //这里就是匹配的比较
+                if (name.equals(value)) {
+                    return i;//找到请求的参数，对应的目标方法的形参的位置
+                }
+            }
+        }
+        //如果没有匹配成功，就返回-1
+        return -1;
     }
 }
