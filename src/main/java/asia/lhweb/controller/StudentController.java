@@ -46,7 +46,7 @@ public class StudentController {
     @RequestMapping(value = "/student/find")
     public void findMonsterByName(HttpServletRequest request,
                                   HttpServletResponse response,
-                                  @RequestParam(value = "name") String name) {
+                                    String name) {
         //设置编码和返回类型
         response.setContentType("text/html;charset=utf-8");
         System.out.println("--接收到的name---" + name);
