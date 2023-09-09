@@ -1,7 +1,7 @@
 package asia.lhweb.controller;
 
-import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
-import asia.lhweb.lhspringmvc.servlet.annotation.RequestMapping;
+import asia.lhweb.lhspringmvc.annotation.Controller;
+import asia.lhweb.lhspringmvc.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

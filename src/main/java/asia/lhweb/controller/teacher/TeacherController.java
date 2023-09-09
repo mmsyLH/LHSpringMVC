@@ -1,6 +1,6 @@
 package asia.lhweb.controller.teacher;
 
-import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
+import asia.lhweb.lhspringmvc.annotation.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,6 +12,7 @@ import java.io.IOException;
  * @author 罗汉
  * @date 2023/09/06
  */
+@Controller
 public class TeacherController {
     public void listStudent(HttpServletRequest request, HttpServletResponse response) {
             response.setContentType("text/html;charset=UTF-8");

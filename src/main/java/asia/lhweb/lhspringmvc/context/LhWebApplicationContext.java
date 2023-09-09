@@ -1,13 +1,16 @@
 package asia.lhweb.lhspringmvc.context;
 
-import asia.lhweb.lhspringmvc.servlet.annotation.Controller;
-import asia.lhweb.lhspringmvc.servlet.annotation.Service;
+import asia.lhweb.lhspringmvc.annotation.AutoWired;
+import asia.lhweb.lhspringmvc.annotation.Controller;
+import asia.lhweb.lhspringmvc.annotation.Service;
 import asia.lhweb.lhspringmvc.xml.XMLParser;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,6 +39,7 @@ public class LhWebApplicationContext {
     public void init() {
         String basePackage = XMLParser.getBasePackage(coonfigLocation.split(":")[1]);// springMVC.xml
         String[] basePackages = basePackage.split(",");
+        //遍历basePackages, 进行扫描
         if (basePackages.length > 0) {// 传入的包要>0
             for (String aPackage : basePackages) {
                 scanPackage(aPackage);
@@ -45,6 +49,9 @@ public class LhWebApplicationContext {
         // 将扫描到的类反射到Ioc容器
         executeInstance();
         System.out.println("扫描后的Ioc：" + ioc);
+        executeAutoWired();
+        System.out.println("自动装配后的Ioc：" + ioc);
+
     }
 
     /**
@@ -91,18 +98,21 @@ public class LhWebApplicationContext {
                 Class<?> aClazz = Class.forName(classFullPath);
                 // 判断是否有注解  有的话就进行反射添加到容器中
                 if (aClazz.isAnnotationPresent(Controller.class)) {
-                    Object instance = aClazz.newInstance();
+
                     // 得到类名首字母小写的beanName
                     /**
                      *
                      * aClazz.getSimpleName().substring(1) 表示从第二个开始到后面全部
                      */
                     // BeanName ：studentController
-                    String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
-                    ioc.put(beanName, instance);
+                    String beanName = aClazz.getSimpleName().substring(0, 1).toLowerCase()
+                            + aClazz.getSimpleName().substring(1);
+                    ioc.put(beanName, aClazz.newInstance());
+                    System.out.println("调试中的ioc："+ioc);
                 }// 如果有其他的注解可以扩展
                 else if (aClazz.isAnnotationPresent(Service.class)) {// 处理Service注解
-                    Service serviceAnnotation = aClazz.getAnnotation(Service.class);
+                    Service serviceAnnotation =
+                            aClazz.getAnnotation(Service.class);
                     String beanName = serviceAnnotation.value();
 
 
@@ -114,7 +124,8 @@ public class LhWebApplicationContext {
                         // 我的理解：如果在后面New的话就有可能导致出现多个beanName对应不同的对象实例到Ioc容器中
                         // 2 遍历接口，然后通过多个接口名来注入
                         for (Class<?> anInterface : interfaces) {
-                            String beanName2 = anInterface.getSimpleName().substring(0, 1).toLowerCase() + aClazz.getSimpleName().substring(1);
+                            String beanName2 = anInterface.getSimpleName().substring(0, 1).toLowerCase() +
+                                    anInterface.getSimpleName().substring(1);
                             ioc.put(beanName2, instance);
                         }
                         // 3 留一个作业，使用类名的首字母小写来注入
@@ -124,9 +135,60 @@ public class LhWebApplicationContext {
 
 
                 }
+                System.out.println("executeInstance中的ioc:"+ioc);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 完成属性的自动装配
+     */
+    private void executeAutoWired() {
+        // 判断ioc 有没有要装配的对象
+        if (ioc.isEmpty()) {
+            throw new RuntimeException("ioc容器中没有Bean对象");
+        }
+
+        // 遍历ioc容器全部的bean的字段或者属性 把字段取出来 一个个比对
+        for (Map.Entry<String, Object> entry : ioc.entrySet()) {
+            // String key = entry.getKey();
+            Object bean = entry.getValue();
+
+            // 获取Bean全部的字段或者属性
+            Field[] fields = bean.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                // 判断当前字段是否有@Autowired注解
+                if (field.isAnnotationPresent(AutoWired.class)) {
+                    // 判断是否有默认value
+                    AutoWired autoWiredAnnotation = field.getAnnotation(AutoWired.class);
+                    String beanName = autoWiredAnnotation.value();
+                    if ("".equals(beanName)) {// 没有设置默认value 就类名小写
+                        Class<?> type = field.getType();// 得到字段的类型  相当于得到了StudentService的类型
+                        // String simpleName = type.getSimpleName();// 拿到了名称
+                        beanName = type.getSimpleName().substring(0, 1).toLowerCase() + type.getSimpleName().substring(1);
+
+                    }
+
+                    // 如果设置了value就按照value进行装配
+                    // 从ioc中获取到bean
+                    if (null == ioc.get(beanName)) {// 说明你在瞎写
+                        throw new RuntimeException("ioc容器中不存在你要装配的bean");
+                    }
+                    // 防止属性是private 需要暴力破解
+                    field.setAccessible(true);
+                    // 可以装配属性
+                    try {
+                        field.set(bean, ioc.get(beanName));// 第一个参数是类 第二个参数是需要关联的类
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        }
+    }
+
+
 }

@@ -1,7 +1,7 @@
 package asia.lhweb.service.impl;
 
 import asia.lhweb.entity.Student;
-import asia.lhweb.lhspringmvc.servlet.annotation.Service;
+import asia.lhweb.lhspringmvc.annotation.Service;
 import asia.lhweb.service.StudentService;
 
 import java.util.ArrayList;
